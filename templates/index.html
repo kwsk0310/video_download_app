@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>youtube/bilibili影片下載網站</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+      .center {
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="center container">
+      <div>
+        <h1 class="mt-5">歡迎來到youtube/bilibili影片下載網站</h1>
+        <div class="form-group mx-sm-8 mb-2">
+        <input 
+          type="text"
+          class="form-control border border-secondary"
+          id="downloadUrl"
+          name="downloadUrl"
+          placeholder="請輸入youtube/bilibili網址"
+        />
+        </div>
+        <button
+          class="btn btn-primary"
+          onclick="download('downloadVideo')">下載影片
+        </button>
+        <button
+          class="btn btn-primary"
+          onclick="download('downloadAudio')">下載音樂
+        </button>
+        <button 
+          class="btn btn-primary"
+          onclick="deleteAll()">清除資料
+        </button>
+      </div>
+    </div>
+
+    <div class=container>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">影片名稱</th>
+            <th scope="col">創作者</th>
+            <th scope="col">觀看數量</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for video in videos %}
+          <tr>
+            <td><i id="{{video.id}}" onclick="deleteOne(this.id)" class="fa-solid fa-trash pointer"></i></td>
+            <td>{{video.video_title}}</td>
+            <td>{{video.author}}</td>
+            <td>{{video.views}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="spinner"></div>
+    </div> 
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/js/all.min.js"></script>
+    <script>
+      // 显示加载动画
+      function startLoading() {
+        document.getElementById("loading-overlay").style.display = "block";
+      }
+
+      // 停止加载动画
+      function stopLoading() {
+        document.getElementById("loading-overlay").style.display = "none";
+      }
+
+      function download(action) {
+        let url = document.getElementById('downloadUrl').value
+        // 檢查下載網址是否為空
+        if (!url) {
+          return;
+        }
+
+        // 显示加载动画
+        startLoading();
+        
+
+        const data = {
+          action: action,
+          downloadUrl: url
+        };
+
+        // 發送 POST 請求
+        fetch("/api/download", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',  // 指定 JSON 格式的請求體
+          },
+          body: JSON.stringify(data)  // 將資料轉換為 JSON 字符串
+        })
+        .then(response => {
+          if (response.ok) {
+            // 从响应头中获取 Content-Disposition
+            const disposition = decodeURIComponent(response.headers.get('Content-Disposition'));
+            console.log(disposition);
+            
+            
+            let filename = ''; // 如果没有提供文件名，使用默认值
+
+            // 解析文件名
+            const filenameMatch = disposition.match(/filename\*=['"]?UTF-8''([^'"]+)/);
+            filename = filenameMatch[1];  // 获取文件名
+            console.log(filename);
+
+            // 通过 blob() 获取文件内容
+            return response.blob().then(blob => {
+              // 创建一个临时链接，触发文件下载
+              const link = document.createElement('a');
+              const url = window.URL.createObjectURL(blob);  // 将 blob 转换为 URL
+              link.href = url;
+              link.download = filename;  // 使用从响应头中获取的文件名
+              document.body.appendChild(link);
+              link.click();  // 模拟点击下载
+              document.body.removeChild(link);  // 下载完成后移除链接
+              // 停止加载动画
+              stopLoading();
+            });
+          } else {
+            throw new Error('文件下载失败');
+          }
+          })
+        .then(() => {window.location.reload();})
+        .catch(error => {
+          console.error('下载错误:', error);
+        });
+      }
+
+      function deleteAll(){
+        if (confirm("確定删除嗎？")) {
+          fetch("api/delete_all", {
+            method: "POST",
+          })
+          .then(response => {
+            if (response.ok) {
+              alert("删除成功");
+              window.location.reload();
+            } else {
+              alert("删除失败");
+            }
+          })
+        }
+      }
+
+      function deleteOne(id){
+        const data = {id: id};
+
+        if (confirm("確定删除嗎？")) {
+          fetch("api/delete_one", {
+            method: "POST",
+            body: JSON.stringify(data),  // 將資料轉換為 JSON 字符串
+          })
+          .then(response => {
+            if (response.ok) {
+              alert("删除成功");
+              window.location.reload();
+            } else {
+              alert("删除失败");
+            }
+          })
+        }
+      }
+    </script>
+  </body>
+</html>

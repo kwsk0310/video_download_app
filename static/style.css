@@ -1,0 +1,46 @@
+/* 样式：遮罩层和加载动画 */
+body {
+    font-family: Arial, sans-serif;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明遮罩 */
+    display: none; /* 初始隐藏 */
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    position: fixed;
+    top: calc(50% - 25px);
+    left: calc(50% - 25px);
+    border: 4px solid rgba(255, 255, 255, 0.3); /* 背景圆圈 */
+    border-top: 4px solid #fff; /* 顶部圆圈是白色的 */
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite; /* 动画：旋转 */
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+/* 旋转动画 */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
